@@ -1,19 +1,26 @@
 [databases]
 {{ range $container := where . "State.Running" true }}
   {{ $labels := $container.Labels }}
-  {{ $dbname := index $labels "pgbouncer.dbname" }}
+  {{ $dbnames := index $labels "pgbouncer.dbname" }}
   {{ $host := index $labels "pgbouncer.host" }}
-  {{ if and $dbname $host }}
+  {{ if not $host }}
+    {{ $host = $container.Name }}
+  {{ end }}
+  {{ if and $dbnames $host }}
     {{ $port := index $labels "pgbouncer.port" }}
     {{ if not $port }}
       {{ $port = "5432" }}
     {{ end }}
     {{ $auth_user := index $labels "pgbouncer.auth_user" }}
-    {{ $db_entry := printf "%s = host=%s dbname=%s port=%s" $dbname $host $dbname $port }}
-    {{ if $auth_user }}
-      {{ $db_entry = printf "%s auth_user=%s" $db_entry $auth_user }}
+    {{ $dbnameList := split $dbnames "," }}
+    {{ range $dbname := $dbnameList }}
+        {{ $dbname = trim $dbname }}
+        {{ $db_entry := printf "%s = host=%s dbname=%s port=%s" $dbname $host $dbname $port }}
+        {{ if $auth_user }}
+          {{ $db_entry = printf "%s auth_user=%s" $db_entry $auth_user }}
+        {{ end }}
+        {{ $db_entry }}
     {{ end }}
-    {{ $db_entry }}
   {{ end }}
 {{ end }}
 
