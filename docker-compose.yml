@@ -1,0 +1,39 @@
+name: pgbouncer-reloader
+
+networks:
+  db_network:
+    external: true
+  net:
+    driver: bridge
+
+services:
+
+  docker-gen:
+    image: jwilder/docker-gen
+    container_name: docker-gen
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./config.cfg:/etc/docker-gen/config.cfg
+      - ./pgbouncer.tmpl:/etc/docker-gen/templates/pgbouncer.tmpl:ro
+      - ./userlist.tmpl:/etc/docker-gen/templates/userlist.tmpl:ro
+      - pgbouncer_config:/etc/pgbouncer
+    entrypoint: /usr/local/bin/docker-gen
+    command: -watch -config /etc/docker-gen/config.cfg
+    networks:
+      - net
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: pgbouncer
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgbouncer_config:/etc/pgbouncer
+    networks:
+      - net
+      - db_network
+    depends_on:
+      - docker-gen
+
+volumes:
+  pgbouncer_config:

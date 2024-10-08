@@ -1,0 +1,8 @@
+"postgres" ""
+{{ range $container := where . "State.Running" true }}
+    {{ $labels := $container.Labels }}
+    {{ $auth_user := index $labels "pgbouncer.auth_user" }}
+    {{ if and $auth_user }}
+        "{{ $auth_user }}" ""
+    {{ end }}
+{{ end }}
